@@ -1622,7 +1622,57 @@ const specMap = {
     'call': {
         opcode: 'procedures_call',
         argMap: []
-    }
+    },
+    // Opcodes for 3.0 only blocks (starting with text2speech and speech2text)
+    // TODO: verify that the arguments are correct.
+    'listenAndWait': {
+        opcode: 'speech2text_listenAndWait',
+        argMap: []
+    },
+    'getSpeech': {
+        opcode: 'speech2text_getSpeech',
+        argMap: []
+    },
+    'whenIHear': {
+        opcode: 'speech2text_whenIHearHat',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'text',
+                inputName: 'PHRASE'
+            }
+        ]
+    },
+    'speakAndWait:': {
+        opcode: 'text2speech_speakAndWait',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'text',
+                inputName: 'WORDS'
+            }
+        ]
+    },
+    'setVoice:': {
+        opcode: 'text2speech_setVoice',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'text2speech_menu_voices',
+                inputName: 'VOICE'
+            }
+        ]
+    },
+    'setLanguage:': {
+        opcode: 'text2speech_setLanguage',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'text2speech_menu_languages',
+                inputName: 'LANGUAGE'
+            }
+        ]
+    },
 };
 
 /**
