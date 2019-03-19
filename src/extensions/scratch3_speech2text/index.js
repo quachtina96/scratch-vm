@@ -245,6 +245,7 @@ class Scratch3Speech2TextBlocks {
      * @private
      */
     _stopListening () {
+        console.log('SPEECH2TEXT STOPPED LISTENING')
         // Note that this can be called before any Listen And Wait block did setup,
         // so check that things exist before disconnecting them.
         if (this._context) {
@@ -391,10 +392,10 @@ class Scratch3Speech2TextBlocks {
         }
 
         this._currentUtterance = transcriptionResult;
-        log.info(`Keeing result: ${this._currentUtterance}`);
+        log.info(`Keeping result: ${this._currentUtterance}`);
         this._utteranceForEdgeTrigger = transcriptionResult;
 
-        // We're done listening so resolove all the promises and reset everying so we're ready for next time.
+        // We're done listening so resolve all the promises and reset everying so we're ready for next time.
         this._resetListening();
 
         // We got results so clear out the timeouts.
@@ -445,6 +446,7 @@ class Scratch3Speech2TextBlocks {
      * @private
      */
     _startListening () {
+        console.log('SPEECH2TEXT IS LISTENING')
         this.runtime.emitMicListening(true);
         this._initListening();
         // Force the block to timeout if we don't get any results back/the user didn't say anything.
