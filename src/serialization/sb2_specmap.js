@@ -21,6 +21,26 @@
  * properties. By hand, I matched the opcode name to the 3.0 opcode.
  * Finally, I filled in the expected arguments as below.
  */
+
+const Variable = require('../engine/variable');
+
+/**
+ * @typedef {object} SB2SpecMap_blockInfo
+ * @property {string} opcode - the Scratch 3.0 block opcode. Use 'extensionID.opcode' for extension opcodes.
+ * @property {Array.<SB2SpecMap_argInfo>} argMap - metadata for this block's arguments.
+ */
+
+/**
+ * @typedef {object} SB2SpecMap_argInfo
+ * @property {string} type - the type of this arg (such as 'input' or 'field')
+ * @property {string} inputOp - the scratch-blocks shadow type for this arg
+ * @property {string} inputName - the name this argument will take when provided to the block implementation
+ */
+
+/**
+ * Mapping of Scratch 2.0 opcode to Scratch 3.0 block metadata.
+ * @type {object.<SB2SpecMap_blockInfo>}
+ */
 const specMap = {
     'forward:': {
         opcode: 'motion_movesteps',
@@ -186,6 +206,45 @@ const specMap = {
         argMap: [
         ]
     },
+    'scrollRight': {
+        opcode: 'motion_scroll_right',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'math_number',
+                inputName: 'DISTANCE'
+            }
+        ]
+    },
+    'scrollUp': {
+        opcode: 'motion_scroll_up',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'math_number',
+                inputName: 'DISTANCE'
+            }
+        ]
+    },
+    'scrollAlign': {
+        opcode: 'motion_align_scene',
+        argMap: [
+            {
+                type: 'field',
+                fieldName: 'ALIGNMENT'
+            }
+        ]
+    },
+    'xScroll': {
+        opcode: 'motion_xscroll',
+        argMap: [
+        ]
+    },
+    'yScroll': {
+        opcode: 'motion_yscroll',
+        argMap: [
+        ]
+    },
     'say:duration:elapsed:from:': {
         opcode: 'looks_sayforsecs',
         argMap: [
@@ -243,6 +302,11 @@ const specMap = {
     },
     'hide': {
         opcode: 'looks_hide',
+        argMap: [
+        ]
+    },
+    'hideAll': {
+        opcode: 'looks_hideallsprites',
         argMap: [
         ]
     },
@@ -324,13 +388,33 @@ const specMap = {
             }
         ]
     },
+    'changeStretchBy:': {
+        opcode: 'looks_changestretchby',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'math_number',
+                inputName: 'CHANGE'
+            }
+        ]
+    },
+    'setStretchTo:': {
+        opcode: 'looks_setstretchto',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'math_number',
+                inputName: 'STRETCH'
+            }
+        ]
+    },
     'comeToFront': {
-        opcode: 'looks_gotofront',
+        opcode: 'looks_gotofrontback',
         argMap: [
         ]
     },
     'goBackByLayers:': {
-        opcode: 'looks_gobacklayers',
+        opcode: 'looks_goforwardbackwardlayers',
         argMap: [
             {
                 type: 'input',
@@ -340,12 +424,17 @@ const specMap = {
         ]
     },
     'costumeIndex': {
-        opcode: 'looks_costumeorder',
+        opcode: 'looks_costumenumbername',
+        argMap: [
+        ]
+    },
+    'costumeName': {
+        opcode: 'looks_costumenumbername',
         argMap: [
         ]
     },
     'sceneName': {
-        opcode: 'looks_backdropname',
+        opcode: 'looks_backdropnumbername',
         argMap: [
         ]
     },
@@ -370,7 +459,7 @@ const specMap = {
         ]
     },
     'backgroundIndex': {
-        opcode: 'looks_backdroporder',
+        opcode: 'looks_backdropnumbername',
         argMap: [
         ]
     },
@@ -400,11 +489,11 @@ const specMap = {
         ]
     },
     'playDrum': {
-        opcode: 'sound_playdrumforbeats',
+        opcode: 'music_playDrumForBeats',
         argMap: [
             {
                 type: 'input',
-                inputOp: 'math_number',
+                inputOp: 'music_menu_DRUM',
                 inputName: 'DRUM'
             },
             {
@@ -415,7 +504,7 @@ const specMap = {
         ]
     },
     'rest:elapsed:from:': {
-        opcode: 'sound_restforbeats',
+        opcode: 'music_restForBeats',
         argMap: [
             {
                 type: 'input',
@@ -425,7 +514,7 @@ const specMap = {
         ]
     },
     'noteOn:duration:elapsed:from:': {
-        opcode: 'sound_playnoteforbeats',
+        opcode: 'music_playNoteForBeats',
         argMap: [
             {
                 type: 'input',
@@ -440,7 +529,17 @@ const specMap = {
         ]
     },
     'instrument:': {
-        opcode: 'sound_setinstrumentto',
+        opcode: 'music_setInstrument',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'music_menu_INSTRUMENT',
+                inputName: 'INSTRUMENT'
+            }
+        ]
+    },
+    'midiInstrument:': {
+        opcode: 'music_midiSetInstrument',
         argMap: [
             {
                 type: 'input',
@@ -475,7 +574,7 @@ const specMap = {
         ]
     },
     'changeTempoBy:': {
-        opcode: 'sound_changetempoby',
+        opcode: 'music_changeTempo',
         argMap: [
             {
                 type: 'input',
@@ -485,7 +584,7 @@ const specMap = {
         ]
     },
     'setTempoTo:': {
-        opcode: 'sound_settempotobpm',
+        opcode: 'music_setTempo',
         argMap: [
             {
                 type: 'input',
@@ -495,32 +594,32 @@ const specMap = {
         ]
     },
     'tempo': {
-        opcode: 'sound_tempo',
+        opcode: 'music_getTempo',
         argMap: [
         ]
     },
     'clearPenTrails': {
-        opcode: 'pen.clear',
+        opcode: 'pen_clear',
         argMap: [
         ]
     },
     'stampCostume': {
-        opcode: 'pen.stamp',
+        opcode: 'pen_stamp',
         argMap: [
         ]
     },
     'putPenDown': {
-        opcode: 'pen.penDown',
+        opcode: 'pen_penDown',
         argMap: [
         ]
     },
     'putPenUp': {
-        opcode: 'pen.penUp',
+        opcode: 'pen_penUp',
         argMap: [
         ]
     },
     'penColor:': {
-        opcode: 'pen.setPenColorToColor',
+        opcode: 'pen_setPenColorToColor',
         argMap: [
             {
                 type: 'input',
@@ -530,27 +629,27 @@ const specMap = {
         ]
     },
     'changePenHueBy:': {
-        opcode: 'pen.changePenHueBy',
+        opcode: 'pen_changePenHueBy',
         argMap: [
             {
                 type: 'input',
                 inputOp: 'math_number',
-                inputName: 'COLOR'
+                inputName: 'HUE'
             }
         ]
     },
     'setPenHueTo:': {
-        opcode: 'pen.setPenHueToNumber',
+        opcode: 'pen_setPenHueToNumber',
         argMap: [
             {
                 type: 'input',
                 inputOp: 'math_number',
-                inputName: 'COLOR'
+                inputName: 'HUE'
             }
         ]
     },
     'changePenShadeBy:': {
-        opcode: 'pen.changePenShadeBy',
+        opcode: 'pen_changePenShadeBy',
         argMap: [
             {
                 type: 'input',
@@ -560,7 +659,7 @@ const specMap = {
         ]
     },
     'setPenShadeTo:': {
-        opcode: 'pen.setPenShadeToNumber',
+        opcode: 'pen_setPenShadeToNumber',
         argMap: [
             {
                 type: 'input',
@@ -570,7 +669,7 @@ const specMap = {
         ]
     },
     'changePenSizeBy:': {
-        opcode: 'pen.changePenSizeBy',
+        opcode: 'pen_changePenSizeBy',
         argMap: [
             {
                 type: 'input',
@@ -580,12 +679,27 @@ const specMap = {
         ]
     },
     'penSize:': {
-        opcode: 'pen.setPenSizeTo',
+        opcode: 'pen_setPenSizeTo',
         argMap: [
             {
                 type: 'input',
                 inputOp: 'math_number',
                 inputName: 'SIZE'
+            }
+        ]
+    },
+    'senseVideoMotion': {
+        opcode: 'videoSensing_videoOn',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'videoSensing_menu_ATTRIBUTE',
+                inputName: 'ATTRIBUTE'
+            },
+            {
+                type: 'input',
+                inputOp: 'videoSensing_menu_SUBJECT',
+                inputName: 'SUBJECT'
             }
         ]
     },
@@ -617,26 +731,43 @@ const specMap = {
             }
         ]
     },
-    'whenSensorGreaterThan': {
-        opcode: 'event_whengreaterthan',
-        argMap: [
-            {
-                type: 'field',
-                fieldName: 'WHENGREATERTHANMENU'
-            },
-            {
-                type: 'input',
-                inputOp: 'math_number',
-                inputName: 'VALUE'
-            }
-        ]
+    'whenSensorGreaterThan': ([, sensor]) => {
+        if (sensor === 'video motion') {
+            return {
+                opcode: 'videoSensing_whenMotionGreaterThan',
+                argMap: [
+                    // skip the first arg, since we converted to a video specific sensing block
+                    {},
+                    {
+                        type: 'input',
+                        inputOp: 'math_number',
+                        inputName: 'REFERENCE'
+                    }
+                ]
+            };
+        }
+        return {
+            opcode: 'event_whengreaterthan',
+            argMap: [
+                {
+                    type: 'field',
+                    fieldName: 'WHENGREATERTHANMENU'
+                },
+                {
+                    type: 'input',
+                    inputOp: 'math_number',
+                    inputName: 'VALUE'
+                }
+            ]
+        };
     },
     'whenIReceive': {
         opcode: 'event_whenbroadcastreceived',
         argMap: [
             {
                 type: 'field',
-                fieldName: 'BROADCAST_OPTION'
+                fieldName: 'BROADCAST_OPTION',
+                variableType: Variable.BROADCAST_MESSAGE_TYPE
             }
         ]
     },
@@ -646,7 +777,8 @@ const specMap = {
             {
                 type: 'input',
                 inputOp: 'event_broadcast_menu',
-                inputName: 'BROADCAST_OPTION'
+                inputName: 'BROADCAST_INPUT',
+                variableType: Variable.BROADCAST_MESSAGE_TYPE
             }
         ]
     },
@@ -656,7 +788,8 @@ const specMap = {
             {
                 type: 'input',
                 inputOp: 'event_broadcast_menu',
-                inputName: 'BROADCAST_OPTION'
+                inputName: 'BROADCAST_INPUT',
+                variableType: Variable.BROADCAST_MESSAGE_TYPE
             }
         ]
     },
@@ -680,6 +813,7 @@ const specMap = {
             },
             {
                 type: 'input',
+                inputOp: 'substack',
                 inputName: 'SUBSTACK'
             }
         ]
@@ -689,6 +823,7 @@ const specMap = {
         argMap: [
             {
                 type: 'input',
+                inputOp: 'substack',
                 inputName: 'SUBSTACK'
             }
         ]
@@ -698,10 +833,12 @@ const specMap = {
         argMap: [
             {
                 type: 'input',
+                inputOp: 'boolean',
                 inputName: 'CONDITION'
             },
             {
                 type: 'input',
+                inputOp: 'substack',
                 inputName: 'SUBSTACK'
             }
         ]
@@ -711,14 +848,17 @@ const specMap = {
         argMap: [
             {
                 type: 'input',
+                inputOp: 'boolean',
                 inputName: 'CONDITION'
             },
             {
                 type: 'input',
+                inputOp: 'substack',
                 inputName: 'SUBSTACK'
             },
             {
                 type: 'input',
+                inputOp: 'substack',
                 inputName: 'SUBSTACK2'
             }
         ]
@@ -728,6 +868,7 @@ const specMap = {
         argMap: [
             {
                 type: 'input',
+                inputOp: 'boolean',
                 inputName: 'CONDITION'
             }
         ]
@@ -737,10 +878,46 @@ const specMap = {
         argMap: [
             {
                 type: 'input',
+                inputOp: 'boolean',
                 inputName: 'CONDITION'
             },
             {
                 type: 'input',
+                inputOp: 'substack',
+                inputName: 'SUBSTACK'
+            }
+        ]
+    },
+    'doWhile': {
+        opcode: 'control_while',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'boolean',
+                inputName: 'CONDITION'
+            },
+            {
+                type: 'input',
+                inputOp: 'substack',
+                inputName: 'SUBSTACK'
+            }
+        ]
+    },
+    'doForLoop': {
+        opcode: 'control_for_each',
+        argMap: [
+            {
+                type: 'field',
+                fieldName: 'VARIABLE'
+            },
+            {
+                type: 'input',
+                inputOp: 'text',
+                inputName: 'VALUE'
+            },
+            {
+                type: 'input',
+                inputOp: 'substack',
                 inputName: 'SUBSTACK'
             }
         ]
@@ -772,6 +949,31 @@ const specMap = {
     'deleteClone': {
         opcode: 'control_delete_this_clone',
         argMap: [
+        ]
+    },
+    'COUNT': {
+        opcode: 'control_get_counter',
+        argMap: [
+        ]
+    },
+    'INCR_COUNT': {
+        opcode: 'control_incr_counter',
+        argMap: [
+        ]
+    },
+    'CLR_COUNT': {
+        opcode: 'control_clear_counter',
+        argMap: [
+        ]
+    },
+    'warpSpeed': {
+        opcode: 'control_all_at_once',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'substack',
+                inputName: 'SUBSTACK'
+            }
         ]
     },
     'touching:': {
@@ -864,33 +1066,38 @@ const specMap = {
         argMap: [
         ]
     },
-    'senseVideoMotion': {
-        opcode: 'sensing_videoon',
+    'isLoud': {
+        opcode: 'sensing_loud',
         argMap: [
-            {
-                type: 'input',
-                inputOp: 'sensing_videoonmenuone',
-                inputName: 'VIDEOONMENU1'
-            },
-            {
-                type: 'input',
-                inputOp: 'sensing_videoonmenutwo',
-                inputName: 'VIDEOONMENU2'
-            }
         ]
     },
+    // 'senseVideoMotion': {
+    //     opcode: 'sensing_videoon',
+    //     argMap: [
+    //         {
+    //             type: 'input',
+    //             inputOp: 'sensing_videoonmenuone',
+    //             inputName: 'VIDEOONMENU1'
+    //         },
+    //         {
+    //             type: 'input',
+    //             inputOp: 'sensing_videoonmenutwo',
+    //             inputName: 'VIDEOONMENU2'
+    //         }
+    //     ]
+    // },
     'setVideoState': {
-        opcode: 'sensing_videotoggle',
+        opcode: 'videoSensing_videoToggle',
         argMap: [
             {
                 type: 'input',
-                inputOp: 'sensing_videotogglemenu',
-                inputName: 'VIDEOTOGGLEMENU'
+                inputOp: 'videoSensing_menu_VIDEO_STATE',
+                inputName: 'VIDEO_STATE'
             }
         ]
     },
     'setVideoTransparency': {
-        opcode: 'sensing_setvideotransparency',
+        opcode: 'videoSensing_setVideoTransparency',
         argMap: [
             {
                 type: 'input',
@@ -913,9 +1120,8 @@ const specMap = {
         opcode: 'sensing_of',
         argMap: [
             {
-                type: 'input',
-                inputOp: 'sensing_of_property_menu',
-                inputName: 'PROPERTY'
+                type: 'field',
+                fieldName: 'PROPERTY'
             },
             {
                 type: 'input',
@@ -928,9 +1134,8 @@ const specMap = {
         opcode: 'sensing_current',
         argMap: [
             {
-                type: 'input',
-                inputOp: 'sensing_currentmenu',
-                inputName: 'CURRENTMENU'
+                type: 'field',
+                fieldName: 'CURRENTMENU'
             }
         ]
     },
@@ -941,6 +1146,11 @@ const specMap = {
     },
     'getUserName': {
         opcode: 'sensing_username',
+        argMap: [
+        ]
+    },
+    'getUserId': {
+        opcode: 'sensing_userid',
         argMap: [
         ]
     },
@@ -1069,10 +1279,12 @@ const specMap = {
         argMap: [
             {
                 type: 'input',
+                inputOp: 'boolean',
                 inputName: 'OPERAND1'
             },
             {
                 type: 'input',
+                inputOp: 'boolean',
                 inputName: 'OPERAND2'
             }
         ]
@@ -1082,10 +1294,12 @@ const specMap = {
         argMap: [
             {
                 type: 'input',
+                inputOp: 'boolean',
                 inputName: 'OPERAND1'
             },
             {
                 type: 'input',
+                inputOp: 'boolean',
                 inputName: 'OPERAND2'
             }
         ]
@@ -1095,6 +1309,7 @@ const specMap = {
         argMap: [
             {
                 type: 'input',
+                inputOp: 'boolean',
                 inputName: 'OPERAND'
             }
         ]
@@ -1183,7 +1398,20 @@ const specMap = {
         argMap: [
             {
                 type: 'field',
-                fieldName: 'VARIABLE'
+                fieldName: 'VARIABLE',
+                variableType: Variable.SCALAR_TYPE
+            }
+        ]
+    },
+    // Scratch 2 uses this alternative variable getter opcode only in monitors,
+    // blocks use the `readVariable` opcode above.
+    'getVar:': {
+        opcode: 'data_variable',
+        argMap: [
+            {
+                type: 'field',
+                fieldName: 'VARIABLE',
+                variableType: Variable.SCALAR_TYPE
             }
         ]
     },
@@ -1192,7 +1420,8 @@ const specMap = {
         argMap: [
             {
                 type: 'field',
-                fieldName: 'VARIABLE'
+                fieldName: 'VARIABLE',
+                variableType: Variable.SCALAR_TYPE
             },
             {
                 type: 'input',
@@ -1206,7 +1435,8 @@ const specMap = {
         argMap: [
             {
                 type: 'field',
-                fieldName: 'VARIABLE'
+                fieldName: 'VARIABLE',
+                variableType: Variable.SCALAR_TYPE
             },
             {
                 type: 'input',
@@ -1220,7 +1450,8 @@ const specMap = {
         argMap: [
             {
                 type: 'field',
-                fieldName: 'VARIABLE'
+                fieldName: 'VARIABLE',
+                variableType: Variable.SCALAR_TYPE
             }
         ]
     },
@@ -1229,16 +1460,18 @@ const specMap = {
         argMap: [
             {
                 type: 'field',
-                fieldName: 'VARIABLE'
+                fieldName: 'VARIABLE',
+                variableType: Variable.SCALAR_TYPE
             }
         ]
     },
     'contentsOfList:': {
-        opcode: 'data_list',
+        opcode: 'data_listcontents',
         argMap: [
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             }
         ]
     },
@@ -1252,7 +1485,8 @@ const specMap = {
             },
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             }
         ]
     },
@@ -1266,7 +1500,8 @@ const specMap = {
             },
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             }
         ]
     },
@@ -1285,7 +1520,8 @@ const specMap = {
             },
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             }
         ]
     },
@@ -1299,7 +1535,8 @@ const specMap = {
             },
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             },
             {
                 type: 'input',
@@ -1318,7 +1555,8 @@ const specMap = {
             },
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             }
         ]
     },
@@ -1327,7 +1565,8 @@ const specMap = {
         argMap: [
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             }
         ]
     },
@@ -1336,7 +1575,8 @@ const specMap = {
         argMap: [
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             },
             {
                 type: 'input',
@@ -1350,7 +1590,8 @@ const specMap = {
         argMap: [
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             }
         ]
     },
@@ -1359,21 +1600,254 @@ const specMap = {
         argMap: [
             {
                 type: 'field',
-                fieldName: 'LIST'
+                fieldName: 'LIST',
+                variableType: Variable.LIST_TYPE
             }
         ]
     },
     'procDef': {
-        opcode: 'procedures_defnoreturn',
+        opcode: 'procedures_definition',
         argMap: []
     },
     'getParam': {
-        opcode: 'procedures_param',
-        argMap: []
+        // Doesn't map to single opcode. Import step assigns final correct opcode.
+        opcode: 'argument_reporter_string_number',
+        argMap: [
+            {
+                type: 'field',
+                fieldName: 'VALUE'
+            }
+        ]
     },
     'call': {
-        opcode: 'procedures_callnoreturn',
+        opcode: 'procedures_call',
         argMap: []
-    }
+    },
+    // Opcodes for 3.0 only blocks (starting with text2speech and speech2text)
+    // TODO: verify that the arguments are correct.
+    'listenAndWait': {
+        opcode: 'speech2text_listenAndWait',
+        argMap: []
+    },
+    'getSpeech': {
+        opcode: 'speech2text_getSpeech',
+        argMap: []
+    },
+    'whenIHear': {
+        opcode: 'speech2text_whenIHearHat',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'text',
+                inputName: 'PHRASE'
+            }
+        ]
+    },
+    'speakAndWait:': {
+        opcode: 'text2speech_speakAndWait',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'text',
+                inputName: 'WORDS'
+            }
+        ]
+    },
+    'setVoice:': {
+        opcode: 'text2speech_setVoice',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'text2speech_menu_voices',
+                inputName: 'VOICE'
+            }
+        ]
+    },
+    'setLanguage:': {
+        opcode: 'text2speech_setLanguage',
+        argMap: [
+            {
+                type: 'input',
+                inputOp: 'text2speech_menu_languages',
+                inputName: 'LANGUAGE'
+            }
+        ]
+    },
 };
+
+/**
+ * Add to the specMap entries for an opcode from a Scratch 2.0 extension. Two entries will be made with the same
+ * metadata; this is done to support projects saved by both older and newer versions of the Scratch 2.0 editor.
+ * @param {string} sb2Extension - the Scratch 2.0 name of the extension
+ * @param {string} sb2Opcode - the Scratch 2.0 opcode
+ * @param {SB2SpecMap_blockInfo} blockInfo - the Scratch 3.0 block info
+ */
+const addExtensionOp = function (sb2Extension, sb2Opcode, blockInfo) {
+    /**
+     * This string separates the name of an extension and the name of an opcode in more recent Scratch 2.0 projects.
+     * Earlier projects used '.' as a separator, up until we added the 'LEGO WeDo 2.0' extension...
+     * @type {string}
+     */
+    const sep = '\u001F'; // Unicode Unit Separator
+
+    // make one entry for projects saved by recent versions of the Scratch 2.0 editor
+    specMap[`${sb2Extension}${sep}${sb2Opcode}`] = blockInfo;
+
+    // make a second for projects saved by older versions of the Scratch 2.0 editor
+    specMap[`${sb2Extension}.${sb2Opcode}`] = blockInfo;
+};
+
+const weDo2 = 'LEGO WeDo 2.0';
+
+addExtensionOp(weDo2, 'motorOnFor', {
+    opcode: 'wedo2_motorOnFor',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_MOTOR_ID',
+            inputName: 'MOTOR_ID'
+        },
+        {
+            type: 'input',
+            inputOp: 'math_number',
+            inputName: 'DURATION'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'motorOn', {
+    opcode: 'wedo2_motorOn',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_MOTOR_ID',
+            inputName: 'MOTOR_ID'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'motorOff', {
+    opcode: 'wedo2_motorOff',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_MOTOR_ID',
+            inputName: 'MOTOR_ID'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'startMotorPower', {
+    opcode: 'wedo2_startMotorPower',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_MOTOR_ID',
+            inputName: 'MOTOR_ID'
+        },
+        {
+            type: 'input',
+            inputOp: 'math_number',
+            inputName: 'POWER'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'setMotorDirection', {
+    opcode: 'wedo2_setMotorDirection',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_MOTOR_ID',
+            inputName: 'MOTOR_ID'
+        },
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_MOTOR_DIRECTION',
+            inputName: 'MOTOR_DIRECTION'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'setLED', {
+    opcode: 'wedo2_setLightHue',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'math_number',
+            inputName: 'HUE'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'playNote', {
+    opcode: 'wedo2_playNoteFor',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'math_number',
+            inputName: 'NOTE'
+        },
+        {
+            type: 'input',
+            inputOp: 'math_number',
+            inputName: 'DURATION'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'whenDistance', {
+    opcode: 'wedo2_whenDistance',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_OP',
+            inputName: 'OP'
+        },
+        {
+            type: 'input',
+            inputOp: 'math_number',
+            inputName: 'REFERENCE'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'whenTilted', {
+    opcode: 'wedo2_whenTilted',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_TILT_DIRECTION_ANY',
+            inputName: 'TILT_DIRECTION_ANY'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'getDistance', {
+    opcode: 'wedo2_getDistance',
+    argMap: []
+});
+
+addExtensionOp(weDo2, 'isTilted', {
+    opcode: 'wedo2_isTilted',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_TILT_DIRECTION_ANY',
+            inputName: 'TILT_DIRECTION_ANY'
+        }
+    ]
+});
+
+addExtensionOp(weDo2, 'getTilt', {
+    opcode: 'wedo2_getTiltAngle',
+    argMap: [
+        {
+            type: 'input',
+            inputOp: 'wedo2_menu_TILT_DIRECTION',
+            inputName: 'TILT_DIRECTION'
+        }
+    ]
+});
+
 module.exports = specMap;

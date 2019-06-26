@@ -2,15 +2,15 @@ const Worker = require('tiny-worker');
 const path = require('path');
 const test = require('tap').test;
 
-const Scratch3PenBlocks = require('../../src/blocks/scratch3_pen');
+const Scratch3PenBlocks = require('../../src/extensions/scratch3_pen/index.js');
 const VirtualMachine = require('../../src/index');
 const dispatch = require('../../src/dispatch/central-dispatch');
 
 const makeTestStorage = require('../fixtures/make-test-storage');
-const extract = require('../fixtures/extract');
+const readFileToBuffer = require('../fixtures/readProjectFile').readFileToBuffer;
 
 const uri = path.resolve(__dirname, '../fixtures/pen.sb2');
-const project = extract(uri);
+const project = readFileToBuffer(uri);
 
 // By default Central Dispatch works with the Worker class built into the browser. Tell it to use TinyWorker instead.
 dispatch.workerClass = Worker;
@@ -48,7 +48,6 @@ test('pen', t => {
         vm.setCompatibilityMode(false);
         vm.setTurboMode(false);
         vm.loadProject(project)
-            .then(() => vm.extensionManager.loadExtensionURL('pen')) /** @TODO: loadProject should load extensions */
             .then(() => {
                 vm.greenFlag();
 

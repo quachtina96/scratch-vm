@@ -1,4 +1,5 @@
 const Cast = require('../util/cast');
+const Timer = require('../util/timer');
 
 class Scratch3SensingBlocks {
     constructor (runtime) {
@@ -7,6 +8,40 @@ class Scratch3SensingBlocks {
          * @type {Runtime}
          */
         this.runtime = runtime;
+
+        /**
+         * The "answer" block value.
+         * @type {string}
+         */
+        this._answer = '';
+
+        /**
+         * The timer utility.
+         * @type {Timer}
+         */
+        this._timer = new Timer();
+
+        /**
+         * The stored microphone loudness measurement.
+         * @type {number}
+         */
+        this._cachedLoudness = -1;
+
+        /**
+         * The time of the most recent microphone loudness measurement.
+         * @type {number}
+         */
+        this._cachedLoudnessTimestamp = 0;
+
+        /**
+         * The list of queued questions and respective `resolve` callbacks.
+         * @type {!Array}
+         */
+        this._questionList = [];
+
+        this.runtime.on('ANSWER', this._onAnswer.bind(this));
+        this.runtime.on('PROJECT_START', this._resetAnswer.bind(this));
+        this.runtime.on('PROJECT_STOP_ALL', this._clearAllQuestions.bind(this));
     }
 
     /**
@@ -24,25 +59,98 @@ class Scratch3SensingBlocks {
             sensing_of: this.getAttributeOf,
             sensing_mousex: this.getMouseX,
             sensing_mousey: this.getMouseY,
+            sensing_setdragmode: this.setDragMode,
             sensing_mousedown: this.getMouseDown,
             sensing_keypressed: this.getKeyPressed,
             sensing_current: this.current,
             sensing_dayssince2000: this.daysSince2000,
-            sensing_loudness: this.getLoudness
+            sensing_loudness: this.getLoudness,
+            sensing_loud: this.isLoud,
+            sensing_askandwait: this.askAndWait,
+            sensing_answer: this.getAnswer,
+            sensing_username: this.getUsername,
+            sensing_userid: () => {} // legacy no-op block
         };
     }
 
-    touchingObject (args, util) {
-        const requestedObject = args.TOUCHINGOBJECTMENU;
-        if (requestedObject === '_mouse_') {
-            const mouseX = util.ioQuery('mouse', 'getX');
-            const mouseY = util.ioQuery('mouse', 'getY');
-            return util.target.isTouchingPoint(mouseX, mouseY);
-        } else if (requestedObject === '_edge_') {
-            return util.target.isTouchingEdge();
-        }
-        return util.target.isTouchingSprite(requestedObject);
+    getMonitored () {
+        return {
+            sensing_answer: {
+                getId: () => 'answer'
+            },
+            sensing_loudness: {
+                getId: () => 'loudness'
+            },
+            sensing_timer: {
+                getId: () => 'timer'
+            },
+            sensing_current: {
+                // This is different from the default toolbox xml id in order to support
+                // importing multiple monitors from the same opcode from sb2 files,
+                // something that is not currently supported in scratch 3.
+                getId: (_, param) => `current_${param}`
+            }
+        };
+    }
 
+    _onAnswer (answer) {
+        this._answer = answer;
+        const questionObj = this._questionList.shift();
+        if (questionObj) {
+            const [_question, resolve, target, wasVisible, wasStage] = questionObj;
+            // If the target was visible when asked, hide the say bubble unless the target was the stage.
+            if (wasVisible && !wasStage) {
+                this.runtime.emit('SAY', target, 'say', '');
+            }
+            resolve();
+            this._askNextQuestion();
+        }
+    }
+
+    _resetAnswer () {
+        this._answer = '';
+    }
+
+    _enqueueAsk (question, resolve, target, wasVisible, wasStage) {
+        this._questionList.push([question, resolve, target, wasVisible, wasStage]);
+    }
+
+    _askNextQuestion () {
+        if (this._questionList.length > 0) {
+            const [question, _resolve, target, wasVisible, wasStage] = this._questionList[0];
+            // If the target is visible, emit a blank question and use the
+            // say event to trigger a bubble unless the target was the stage.
+            if (wasVisible && !wasStage) {
+                this.runtime.emit('SAY', target, 'say', question);
+                this.runtime.emit('QUESTION', '');
+            } else {
+                this.runtime.emit('QUESTION', question);
+            }
+        }
+    }
+
+    _clearAllQuestions () {
+        this._questionList = [];
+        this.runtime.emit('QUESTION', null);
+    }
+
+    askAndWait (args, util) {
+        const _target = util.target;
+        return new Promise(resolve => {
+            const isQuestionAsked = this._questionList.length > 0;
+            this._enqueueAsk(String(args.QUESTION), resolve, _target, _target.visible, _target.isStage);
+            if (!isQuestionAsked) {
+                this._askNextQuestion();
+            }
+        });
+    }
+
+    getAnswer () {
+        return this._answer;
+    }
+
+    touchingObject (args, util) {
+        return util.target.isTouchingObject(args.TOUCHINGOBJECTMENU);
     }
 
     touchingColor (args, util) {
@@ -62,8 +170,8 @@ class Scratch3SensingBlocks {
         let targetX = 0;
         let targetY = 0;
         if (args.DISTANCETOMENU === '_mouse_') {
-            targetX = util.ioQuery('mouse', 'getX');
-            targetY = util.ioQuery('mouse', 'getY');
+            targetX = util.ioQuery('mouse', 'getScratchX');
+            targetY = util.ioQuery('mouse', 'getScratchY');
         } else {
             const distTarget = this.runtime.getSpriteTargetByName(
                 args.DISTANCETOMENU
@@ -78,6 +186,10 @@ class Scratch3SensingBlocks {
         return Math.sqrt((dx * dx) + (dy * dy));
     }
 
+    setDragMode (args, util) {
+        util.target.setDraggable(args.DRAG_MODE === 'draggable');
+    }
+
     getTimer (args, util) {
         return util.ioQuery('clock', 'projectTimer');
     }
@@ -87,11 +199,11 @@ class Scratch3SensingBlocks {
     }
 
     getMouseX (args, util) {
-        return util.ioQuery('mouse', 'getX');
+        return util.ioQuery('mouse', 'getScratchX');
     }
 
     getMouseY (args, util) {
-        return util.ioQuery('mouse', 'getY');
+        return util.ioQuery('mouse', 'getScratchY');
     }
 
     getMouseDown (args, util) {
@@ -129,7 +241,21 @@ class Scratch3SensingBlocks {
 
     getLoudness () {
         if (typeof this.runtime.audioEngine === 'undefined') return -1;
-        return this.runtime.audioEngine.getLoudness();
+        if (this.runtime.currentStepTime === null) return -1;
+
+        // Only measure loudness once per step
+        const timeSinceLoudness = this._timer.time() - this._cachedLoudnessTimestamp;
+        if (timeSinceLoudness < this.runtime.currentStepTime) {
+            return this._cachedLoudness;
+        }
+
+        this._cachedLoudnessTimestamp = this._timer.time();
+        this._cachedLoudness = this.runtime.audioEngine.getLoudness();
+        return this._cachedLoudness;
+    }
+
+    isLoud () {
+        return this.getLoudness() > 10;
     }
 
     getAttributeOf (args) {
@@ -141,6 +267,11 @@ class Scratch3SensingBlocks {
             attrTarget = this.runtime.getSpriteTargetByName(args.OBJECT);
         }
 
+        // attrTarget can be undefined if the target does not exist
+        // (e.g. single sprite uploaded from larger project referencing
+        // another sprite that wasn't uploaded)
+        if (!attrTarget) return 0;
+
         // Generic attributes
         if (attrTarget.isStage) {
             switch (args.PROPERTY) {
@@ -149,8 +280,8 @@ class Scratch3SensingBlocks {
 
             case 'backdrop #': return attrTarget.currentCostume + 1;
             case 'backdrop name':
-                return attrTarget.sprite.costumes[attrTarget.currentCostume].name;
-            case 'volume': return; // @todo: Keep this in mind for sound blocks!
+                return attrTarget.getCostumes()[attrTarget.currentCostume].name;
+            case 'volume': return attrTarget.volume;
             }
         } else {
             switch (args.PROPERTY) {
@@ -159,20 +290,26 @@ class Scratch3SensingBlocks {
             case 'direction': return attrTarget.direction;
             case 'costume #': return attrTarget.currentCostume + 1;
             case 'costume name':
-                return attrTarget.sprite.costumes[attrTarget.currentCostume].name;
+                return attrTarget.getCostumes()[attrTarget.currentCostume].name;
             case 'size': return attrTarget.size;
-            case 'volume': return; // @todo: above, keep in mind for sound blocks..
+            case 'volume': return attrTarget.volume;
             }
         }
 
         // Variables
         const varName = args.PROPERTY;
-        if (attrTarget.variables.hasOwnProperty(varName)) {
-            return attrTarget.variables[varName].value;
+        for (const id in attrTarget.variables) {
+            if (attrTarget.variables[id].name === varName) {
+                return attrTarget.variables[id].value;
+            }
         }
 
         // Otherwise, 0
         return 0;
+    }
+
+    getUsername (args, util) {
+        return util.ioQuery('userData', 'getUsername');
     }
 }
 
